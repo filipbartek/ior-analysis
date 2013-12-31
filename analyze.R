@@ -1,5 +1,4 @@
-file = "Filip_2013_XII_31_1536.csv"
-
+# `what` parameter of `scan` (unused)
 what = list(target_side = "character",
 target_time = "numeric",
 cue_side = "character",
@@ -23,10 +22,10 @@ expName = "character",
 session = "character",
 participant = "character")
 
-sep = ","
-skip = 1
-fileEncoding = "UTF-8"
-encoding = "UTF-8"
+data0 = read.csv(file = file)
+data0
 
-data = scan(file = file, what = what, sep = sep, skip = skip, fileEncoding = fileEncoding, encoding = encoding, flush = TRUE)
-data
+#dataAll = data.frame(data0, data1)
+
+data1 = subset(data0, select = -c(X))
+data1

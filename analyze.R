@@ -44,11 +44,18 @@ participantsSub = subset(participants, select = c(id, path))
 
 procParticipant <- function(participant) {
 partData <- read.csv(file = participant$path, colClasses = partDataColClasses, fileEncoding = "UTF-8")
-partData <- subset(partData, select = -c(X)) # empty column added by PsychoPy
 partData$participantId <- rep(participant$id, times = nrow(partData))
-partData
+return(partData)
 }
 
-res = by(participantsSub, 1:nrow(participantsSub), procParticipant)
+dataList = by(participantsSub, 1:nrow(participantsSub), procParticipant)
 
-resres = reshape::merge_all(res)
+dataAll = reshape::merge_all(dataList)
+
+# Now `dataAll` contains all PsychoPy output data in one data frame with extra column `participantId` specifying the participant
+
+dataAll = subset(dataAll, select = -c(X)) # empty column added by PsychoPy
+
+dataAll$block <- NA_integer_
+dataAll <- transform(dataAll, block = ifelse(!is.na(block0.thisRepN), 0, block))
+dataAll <- transform(dataAll, block = ifelse(!is.na(block1.thisRepN), 1, block))

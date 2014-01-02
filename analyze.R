@@ -1,8 +1,9 @@
 # Execute this script in the directory "ior-data/participants"
 
-participantsFile = "participants.csv"
-
 library(reshape)
+library(Hmisc)
+
+participantsFile = "participants.csv"
 
 participantColClasses = list(
 path = "character",
@@ -54,7 +55,8 @@ dataAll = reshape::merge_all(dataList)
 
 # Now `dataAll` contains all PsychoPy output data in one data frame with extra column `participantId` specifying the participant
 
-dataAll = subset(dataAll, select = -c(X)) # empty column added by PsychoPy
+# Remove empty column added by PsychoPy
+dataAll = subset(dataAll, select = -c(X))
 
 # block
 dataAll$block <- NA
@@ -103,30 +105,60 @@ dataAll <- transform(dataAll,
 )
 dataAll <- subset(dataAll, select = -c(trials.thisIndex, block0.thisIndex, block1.thisIndex))
 
+# Only keep interesting columns
 dataAll <- subset(dataAll, select = c(participantId, block, target_side, target_time, cue_side, trialKey.rt))
 
+# Discard training trials
 dataBlocks <- subset(dataAll, block %in% c("block0", "block1"))
+
+# Merge blocks
 dataBlocks <- subset(dataAll, select = -c(block))
 
 dataRes <- dataBlocks
 
+# Determine correctness of answers
 dataRes <- transform(dataRes, exp.rt = (target_time / 1000) + 0.5)
 dataRes <- transform(dataRes, delay = trialKey.rt - exp.rt)
 dataRes <- transform(dataRes, corrDelay = (delay >= 0 & delay <= 0.5))
 dataRes <- transform(dataRes, corr = (target_side == "none" & is.na(trialKey.rt)) | (target_side != "none" & !is.na(corrDelay) & corrDelay))
 
-getSuccRate <- function(trials) {
-succCount = nrow(subset(trials, corr))
-succR <- succCount / nrow(trials)
-return(c(nrow(trials), succCount, succR))
-}
+# Add `cued` column
+dataRes <- transform(dataRes, cued = ifelse(target_side == "left" | target_side == "right", (as.character(target_side) == as.character(cue_side)), NA))
 
-succRate <- by(dataRes, dataRes$participantId, getSuccRate)
-succRate
-getSuccRate(dataRes)
+# Remove uninteresting columns
+dataRes <- subset(dataRes, select = c(participantId, target_side, target_time, cue_side, delay, corr, cued))
 
+# Print success rate for every participant and total
+aggregate(dataRes$corr, list(participantId = dataRes$participantId), mean)
+mean(dataRes$corr)
+
+# Print success rates for various interesting subsets
+aggregate(dataRes$corr, list(cued = dataRes$cued), mean)
 aggregate(dataRes$corr, list(target_side = dataRes$target_side), mean)
 aggregate(dataRes$corr, list(target_time = dataRes$target_time), mean)
 aggregate(dataRes$corr, list(cue_side = dataRes$cue_side), mean)
 aggregate(dataRes$corr, list(target_side = dataRes$target_side, cue_side = dataRes$cue_side), mean)
 aggregate(dataRes$corr, list(target_side = dataRes$target_side, target_time = dataRes$target_time, cue_side = dataRes$cue_side), mean)
+
+dataSides <- dataRes
+
+# Discard trials with target_side none or central
+dataSides <- subset(dataSides, target_side %in% c("left", "right"))
+
+# Discard trials with answers given too early or too late or not at all
+dataSides <- subset(dataSides, corr == TRUE)
+
+# Remove uninteresting columns
+dataSides <- subset(dataSides, select = c(participantId, target_time, delay, cued))
+
+sidesMean <- aggregate(dataSides$delay, list(target_time = dataSides$target_time, cued = dataSides$cued), mean)
+sidesSd <- aggregate(dataSides$delay, list(target_time = dataSides$target_time, cued = dataSides$cued), sd)
+
+fMean <- subset(sidesMean, cued == FALSE, select = -c(cued))
+fSd <- subset(sidesSd, cued == FALSE, select = -c(cued))
+tMean <- subset(sidesMean, cued == TRUE, select = -c(cued))
+tSd <- subset(sidesSd, cued == TRUE, select = -c(cued))
+
+errbar(fMean$target_time - 1, fMean$x, fMean$x + fSd$x, fMean$x - fSd$x, col = "red")
+par(new=TRUE)
+errbar(tMean$target_time + 1, tMean$x, tMean$x + tSd$x, tMean$x - tSd$x, add = TRUE, col = "green")

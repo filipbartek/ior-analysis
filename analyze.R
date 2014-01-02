@@ -56,6 +56,10 @@ dataAll = reshape::merge_all(dataList)
 
 dataAll = subset(dataAll, select = -c(X)) # empty column added by PsychoPy
 
-dataAll$block <- NA_integer_
-dataAll <- transform(dataAll, block = ifelse(!is.na(block0.thisRepN), 0, block))
-dataAll <- transform(dataAll, block = ifelse(!is.na(block1.thisRepN), 1, block))
+dataAll$block <- NA
+dataAll <- transform(dataAll, block = ifelse(!is.na(trials.thisRepN), "trials", block))
+dataAll <- transform(dataAll, block = ifelse(!is.na(block0.thisRepN), "block0", block))
+dataAll <- transform(dataAll, block = ifelse(!is.na(block1.thisRepN), "block1", block))
+dataAll$block <- factor(dataAll$block, levels = c("trials", "block0", "block1"), ordered = TRUE)
+
+#dataBlocks <- subset(dataAll, block %in% c("block0", "block1"))

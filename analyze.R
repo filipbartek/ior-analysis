@@ -124,3 +124,9 @@ return(c(nrow(trials), succCount, succR))
 succRate <- by(dataRes, dataRes$participantId, getSuccRate)
 succRate
 getSuccRate(dataRes)
+
+aggregate(dataRes$corr, list(target_side = dataRes$target_side), mean)
+aggregate(dataRes$corr, list(target_time = dataRes$target_time), mean)
+aggregate(dataRes$corr, list(cue_side = dataRes$cue_side), mean)
+aggregate(dataRes$corr, list(target_side = dataRes$target_side, cue_side = dataRes$cue_side), mean)
+aggregate(dataRes$corr, list(target_side = dataRes$target_side, target_time = dataRes$target_time, cue_side = dataRes$cue_side), mean)

@@ -1,7 +1,23 @@
-# `what` parameter of `scan` (unused)
-what = list(target_side = "character",
+# Execute this script in the directory "ior-data/participants"
+
+participantsFile = "participants.csv"
+
+library(reshape)
+
+participantColClasses = list(
+path = "character",
+name = "character",
+age = "integer",
+sex = "factor",
+date = "Date",
+computer = "factor",
+version = "factor",
+commit = "factor")
+
+partDataColClasses = list(
+target_side = "factor",
 target_time = "numeric",
-cue_side = "character",
+cue_side = "factor",
 trials.thisRepN = "integer",
 trials.thisTrialN = "integer",
 trials.thisN = "integer",
@@ -18,14 +34,21 @@ trialKey.keys = "character",
 trialKey.rt = "numeric",
 date = "character",
 frameRate = "numeric",
-expName = "character",
-session = "character",
-participant = "character")
+expName = "factor",
+session = "factor",
+participant = "factor")
 
-data0 = read.csv(file = file)
-data0
+participants = read.csv(file = participantsFile, colClasses = participantColClasses, fileEncoding = "UTF-8")
+participants$id <- row.names(participants) # anonymous participant id
+participantsSub = subset(participants, select = c(id, path))
 
-#dataAll = data.frame(data0, data1)
+procParticipant <- function(participant) {
+partData <- read.csv(file = participant$path, colClasses = partDataColClasses, fileEncoding = "UTF-8")
+partData <- subset(partData, select = -c(X)) # empty column added by PsychoPy
+partData$participantId <- rep(participant$id, times = nrow(partData))
+partData
+}
 
-data1 = subset(data0, select = -c(X))
-data1
+res = by(participantsSub, 1:nrow(participantsSub), procParticipant)
+
+resres = reshape::merge_all(res)

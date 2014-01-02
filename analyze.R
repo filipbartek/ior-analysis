@@ -114,3 +114,13 @@ dataRes <- transform(dataRes, exp.rt = (target_time / 1000) + 0.5)
 dataRes <- transform(dataRes, delay = trialKey.rt - exp.rt)
 dataRes <- transform(dataRes, corrDelay = (delay >= 0 & delay <= 0.5))
 dataRes <- transform(dataRes, corr = (target_side == "none" & is.na(trialKey.rt)) | (target_side != "none" & !is.na(corrDelay) & corrDelay))
+
+getSuccRate <- function(trials) {
+succCount = nrow(subset(trials, corr))
+succR <- succCount / nrow(trials)
+return(c(nrow(trials), succCount, succR))
+}
+
+succRate <- by(dataRes, dataRes$participantId, getSuccRate)
+succRate
+getSuccRate(dataRes)

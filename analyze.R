@@ -3,6 +3,10 @@
 library(reshape)
 library(Hmisc)
 
+# Change working directory to the one that contains experiment data
+# Assumes we're on TTT-HP computer
+setwd("C:/Users/TTT/Documents/GitHub/ior-data/participants")
+
 participantsFile = "participants.csv"
 
 participantColClasses = list(

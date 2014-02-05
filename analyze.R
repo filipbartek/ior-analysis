@@ -126,18 +126,14 @@ dataRes <- transform(dataRes, delay = trialKey.rt - exp.rt)
 dataRes <- transform(dataRes, corrDelay = (delay >= 0 & delay <= 0.5))
 dataRes <- transform(dataRes, corr = (target_side == "none" & is.na(trialKey.rt)) | (target_side != "none" & !is.na(corrDelay) & corrDelay))
 
-# Add `cued` column
-dataRes <- transform(dataRes, cued = ifelse(target_side == "left" | target_side == "right", (as.character(target_side) == as.character(cue_side)), NA))
-
 # Remove uninteresting columns
-dataRes <- subset(dataRes, select = c(participantId, target_side, target_time, cue_side, delay, corr, cued))
+dataRes <- subset(dataRes, select = c(participantId, target_side, target_time, cue_side, delay, corr))
 
 # Print success rate for every participant and total
 aggregate(dataRes$corr, list(participantId = dataRes$participantId), mean)
 mean(dataRes$corr)
 
 # Print success rates for various interesting subsets
-aggregate(dataRes$corr, list(cued = dataRes$cued), mean)
 aggregate(dataRes$corr, list(target_side = dataRes$target_side), mean)
 aggregate(dataRes$corr, list(target_time = dataRes$target_time), mean)
 aggregate(dataRes$corr, list(cue_side = dataRes$cue_side), mean)
@@ -145,15 +141,24 @@ aggregate(dataRes$corr, list(target_side = dataRes$target_side, cue_side = dataR
 aggregate(dataRes$corr, list(target_side = dataRes$target_side, target_time = dataRes$target_time, cue_side = dataRes$cue_side), mean)
 
 dataSides <- dataRes
-
 # Discard trials with target_side none or central
 dataSides <- subset(dataSides, target_side %in% c("left", "right"))
+
+# Add `cued` column
+dataSides <- transform(dataSides, cued = ifelse(target_side == "left" | target_side == "right", (as.character(target_side) == as.character(cue_side)), NA))
+
+# Print means
+aggregate(dataSides$corr, list(cued = dataSides$cued), mean)
+aggregate(dataSides$corr, list(cued = dataSides$cued, target_time = dataSides$target_time), mean)
 
 # Discard trials with answers given too early or too late or not at all
 dataSides <- subset(dataSides, corr == TRUE)
 
 # Remove uninteresting columns
 dataSides <- subset(dataSides, select = c(participantId, target_time, delay, cued))
+
+# Print means of delay across cued and target_time
+aggregate(dataSides$delay, list(cued = dataSides$cued, target_time = dataSides$target_time), mean)
 
 sidesMean <- aggregate(dataSides$delay, list(target_time = dataSides$target_time, cued = dataSides$cued), mean)
 sidesSd <- aggregate(dataSides$delay, list(target_time = dataSides$target_time, cued = dataSides$cued), sd)

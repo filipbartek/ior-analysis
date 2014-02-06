@@ -111,7 +111,7 @@ dataAll <- subset(dataAll, select = -c(trials.thisIndex, block0.thisIndex, block
 
 # Save data in a CSV file
 dataOut = dataAll
-dataOut <- subset(dataOut, select = c(participantId, block, target_side, target_time, cue_side, trialKey.rt))
+dataOut <- subset(dataOut, select = c(participantId, block, thisRepN, thisTrialN, thisN, thisIndex, target_side, target_time, cue_side, trialKey.rt))
 write.csv(x = dataOut, file = "data.csv")
 
 # Only keep interesting columns

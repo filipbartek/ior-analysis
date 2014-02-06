@@ -160,6 +160,9 @@ dataSides <- subset(dataSides, select = c(participantId, target_time, delay, cue
 # Print means of delay across cued and target_time
 aggregate(dataSides$delay, list(cued = dataSides$cued, target_time = dataSides$target_time), mean)
 
+# How quick are the participants?
+aggregate(dataSides$delay, list(dataSides$participantId), mean)
+
 sidesMean <- aggregate(dataSides$delay, list(target_time = dataSides$target_time, cued = dataSides$cued), mean)
 sidesSd <- aggregate(dataSides$delay, list(target_time = dataSides$target_time, cued = dataSides$cued), sd)
 
@@ -168,6 +171,23 @@ fSd <- subset(sidesSd, cued == FALSE, select = -c(cued))
 tMean <- subset(sidesMean, cued == TRUE, select = -c(cued))
 tSd <- subset(sidesSd, cued == TRUE, select = -c(cued))
 
-errbar(fMean$target_time - 1, fMean$x, fMean$x + fSd$x, fMean$x - fSd$x, col = "red")
+errbar(fMean$target_time - 1, fMean$x, fMean$x + fSd$x, fMean$x - fSd$x, col = "red", xlim = c(0, 400))
 par(new=TRUE)
 errbar(tMean$target_time + 1, tMean$x, tMean$x + tSd$x, tMean$x - tSd$x, add = TRUE, col = "green")
+mTrue <- lm(delay~target_time, subset(dataSides, cued == TRUE))
+abline(mTrue$coef, lty = 5, col = "green")
+mFalse <- lm(delay~target_time, subset(dataSides, cued == FALSE))
+abline(mFalse$coef, lty = 5, col = "red")
+
+cm <- rbind(coef(mTrue),coef(mFalse)) # Coefficient matrix
+p <- c(-solve(cbind(cm[,2],-1)) %*% cm[,1])
+points(p)
+
+dataLong = subset(dataSides, target_time == 350, -c(target_time))
+dataLongTrue = subset(dataLong, cued == TRUE, -c(cued))
+dataLongFalse = subset(dataLong, cued == FALSE, -c(cued))
+t.test(x = dataLongTrue$delay, y = dataLongFalse$delay, alternative = "greater")
+
+aov.ex = aov(delay~cued*target_time, dataSides)
+summary(aov.ex)
+print(model.tables(aov.ex, "means"),digits=3)

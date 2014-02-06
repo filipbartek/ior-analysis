@@ -109,6 +109,11 @@ dataAll <- transform(dataAll,
 )
 dataAll <- subset(dataAll, select = -c(trials.thisIndex, block0.thisIndex, block1.thisIndex))
 
+# Save data in a CSV file
+dataOut = dataAll
+dataOut <- subset(dataOut, select = c(participantId, block, target_side, target_time, cue_side, trialKey.rt))
+write.csv(x = dataOut, file = "data.csv")
+
 # Only keep interesting columns
 dataAll <- subset(dataAll, select = c(participantId, block, target_side, target_time, cue_side, trialKey.rt))
 
@@ -176,14 +181,16 @@ tMean <- subset(sidesMean, cued == TRUE, select = -c(cued))
 tSd <- subset(sidesSd, cued == TRUE, select = -c(cued))
 
 # Plot main data
-svg(filename = "main.svg")
+#svg(filename = "main.svg")
+png(filename = "main.png", width = 960, height = 960, pointsize = 24)
 errbar(fMean$target_time - 1, fMean$x, fMean$x + fSd$x, fMean$x - fSd$x, col = "red", xlim = c(0, 500), xlab = NA, ylab = NA,
-	lty = "solid", type = "o")
+	lty = "solid", type = "o", xaxt = "n")
 title(main = "Reaction times by interval", xlab = "Interval (ms)", ylab = "Reaction time (ms)")
 par(new=TRUE)
 errbar(tMean$target_time + 1, tMean$x, tMean$x + tSd$x, tMean$x - tSd$x, add = TRUE, col = "green", xlab = NA, ylab = NA,
-	lty = "solid", type = "o")
+	lty = "solid", type = "o", xaxt = "n")
 legend("topright", title="Cue", c("Uncued", "Cued"), fill=c("red", "green"))
+axis(1, c(50, 200, 350, 403), c("50", "200", "350", "403"))
 
 # Plot linear fits
 mTrue <- lm(delay~target_time, subset(dataSides, cued == TRUE))
@@ -205,7 +212,8 @@ dataSidesPretty <- dataSides
 dataSidesPretty$cued <- factor(dataSidesPretty$cued, labels = c("Uncued", "Cued"))
 
 # Boxplot of the 6 groups
-svg(filename = "boxplot.svg")
+#svg(filename = "boxplot.svg")
+png(filename = "boxplot.png", width = 960, height = 960, pointsize = 24)
 boxplot(delay~cued*target_time, dataSidesPretty, col = c("red", "green"), names = c("50", "50", "200", "200", "350", "350"),
 	main = "Reaction time distribution by cue and interval", ylab = "Reaction time (ms)", xlab = "Interval (ms)")
 legend("bottomleft", title="Cue", c("Uncued", "Cued"), fill=c("red", "green"))

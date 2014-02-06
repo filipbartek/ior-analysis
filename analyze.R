@@ -157,37 +157,61 @@ dataSides <- subset(dataSides, corr == TRUE)
 # Remove uninteresting columns
 dataSides <- subset(dataSides, select = c(participantId, target_time, delay, cued))
 
+# Change unit of delay to ms from s
+dataSides$delay <- dataSides$delay * 1000
+
 # Print means of delay across cued and target_time
 aggregate(dataSides$delay, list(cued = dataSides$cued, target_time = dataSides$target_time), mean)
 
 # How quick are the participants?
 aggregate(dataSides$delay, list(dataSides$participantId), mean)
 
+# Plot reaction times
+# Prepare means and sds
 sidesMean <- aggregate(dataSides$delay, list(target_time = dataSides$target_time, cued = dataSides$cued), mean)
 sidesSd <- aggregate(dataSides$delay, list(target_time = dataSides$target_time, cued = dataSides$cued), sd)
-
 fMean <- subset(sidesMean, cued == FALSE, select = -c(cued))
 fSd <- subset(sidesSd, cued == FALSE, select = -c(cued))
 tMean <- subset(sidesMean, cued == TRUE, select = -c(cued))
 tSd <- subset(sidesSd, cued == TRUE, select = -c(cued))
 
-errbar(fMean$target_time - 1, fMean$x, fMean$x + fSd$x, fMean$x - fSd$x, col = "red", xlim = c(0, 400))
+# Plot main data
+svg(filename = "main.svg")
+errbar(fMean$target_time - 1, fMean$x, fMean$x + fSd$x, fMean$x - fSd$x, col = "red", xlim = c(0, 500), xlab = NA, ylab = NA,
+	lty = "solid", type = "o")
+title(main = "Reaction times by interval", xlab = "Interval (ms)", ylab = "Reaction time (ms)")
 par(new=TRUE)
-errbar(tMean$target_time + 1, tMean$x, tMean$x + tSd$x, tMean$x - tSd$x, add = TRUE, col = "green")
-mTrue <- lm(delay~target_time, subset(dataSides, cued == TRUE))
-abline(mTrue$coef, lty = 5, col = "green")
-mFalse <- lm(delay~target_time, subset(dataSides, cued == FALSE))
-abline(mFalse$coef, lty = 5, col = "red")
+errbar(tMean$target_time + 1, tMean$x, tMean$x + tSd$x, tMean$x - tSd$x, add = TRUE, col = "green", xlab = NA, ylab = NA,
+	lty = "solid", type = "o")
+legend("topright", title="Cue", c("Uncued", "Cued"), fill=c("red", "green"))
 
+# Plot linear fits
+mTrue <- lm(delay~target_time, subset(dataSides, cued == TRUE))
+abline(mTrue$coef, lty = "dashed", col = "green")
+mFalse <- lm(delay~target_time, subset(dataSides, cued == FALSE))
+abline(mFalse$coef, lty = "dashed", col = "red")
+
+# Plot intersection of linear fits
 cm <- rbind(coef(mTrue),coef(mFalse)) # Coefficient matrix
 p <- c(-solve(cbind(cm[,2],-1)) %*% cm[,1])
-points(p)
+points(c(p[1]), c(p[2]))
+dev.off()
 
-dataLong = subset(dataSides, target_time == 350, -c(target_time))
-dataLongTrue = subset(dataLong, cued == TRUE, -c(cued))
-dataLongFalse = subset(dataLong, cued == FALSE, -c(cued))
-t.test(x = dataLongTrue$delay, y = dataLongFalse$delay, alternative = "greater")
+# Print position of the intersection
+print(p)
 
-aov.ex = aov(delay~cued*target_time, dataSides)
+# Convert logical `cued` to a factor with labels "Uncued" and "Cued"
+dataSidesPretty <- dataSides
+dataSidesPretty$cued <- factor(dataSidesPretty$cued, labels = c("Uncued", "Cued"))
+
+# Boxplot of the 6 groups
+svg(filename = "boxplot.svg")
+boxplot(delay~cued*target_time, dataSidesPretty, col = c("red", "green"), names = c("50", "50", "200", "200", "350", "350"),
+	main = "Reaction time distribution by cue and interval", ylab = "Reaction time (ms)", xlab = "Interval (ms)")
+legend("bottomleft", title="Cue", c("Uncued", "Cued"), fill=c("red", "green"))
+dev.off()
+
+# ANOVA - Analysis of variance
+aov.ex = aov(delay~cued*target_time, dataSidesPretty)
 summary(aov.ex)
-print(model.tables(aov.ex, "means"),digits=3)
+#print(model.tables(aov.ex, "means"),digits=3)
